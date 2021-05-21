@@ -77,9 +77,9 @@ t_max <- length(long_dates)
 decline_95 <- c.nume(thetatab[,"decline"])
 dt_95 <- c.nume(thetatab[,"dt_decline"])
 
-ma_UK_cases_f1 <- decline_f(total_days_uk,t_max,decline_95[1],1,ma_UK_cases_fit)
-ma_UK_cases_f2 <- decline_f(total_days_uk,t_max,decline_95[2],1,ma_UK_cases_fit)
-ma_UK_cases_f3 <- decline_f(total_days_uk,t_max,decline_95[3],1,ma_UK_cases_fit)
+ma_UK_cases_f1 <- decline_f(t_max, decline_95[1], 1, ma_UK_cases_fit)
+ma_UK_cases_f2 <- decline_f(t_max, decline_95[2], 1, ma_UK_cases_fit)
+ma_UK_cases_f3 <- decline_f(t_max, decline_95[3], 1, ma_UK_cases_fit)
 
 cvector <- matrix(NA,nrow=btsp,ncol=length(ma_UK_cases_2))
 

@@ -18,35 +18,23 @@ run_transmission_mcmc <- function(MCMC.runs = 10){
 
   # - - - - - - - - - - - 
   # Load relevant data
-  thetaR_IC = read_csv("data/thetaR_IC.csv")
-  thetaR_IC <- thetaR_IC[1,]
-  
-  # - - - - - - - - - - - 
   # Initialise ICs 
 
   # Global parameters
-  theta = c(rr = thetaR_IC$rr,
-            r_scale = thetaR_IC$r_scale,
-            r_scale_2 = thetaR_IC$r_scale_2,
-            decline = thetaR_IC$decline,
-            dt_decline = thetaR_IC$dt_decline,
-            imp = thetaR_IC$imp,
-            rep_vol = thetaR_IC$rep_vol
-            )
-  
-  
+  theta = as.list(fread("data/thetaR_IC.csv")[1])
+
   # Covariance matrices - Add theta and thetaAll together in MCMC runs
-  nparam = length(theta) 
-  npc = rep(1,nparam)
+  npc = rep(1, length(theta))
+  names(npc) <- names(theta)
   pmask = NULL # fix parameters
   
   # Define models (i.e. parameters to fit)
-  if(iiM==1){pmask <- c("dt_decline")}
-  if(iiM==2){pmask <- c("r_scale_2","dt_decline")}
+  if(iiM==1){ pmask <- c("dt_decline") }
+  if(iiM==2){ pmask <- c("r_scale_2","dt_decline") }
   
-  npc[match(pmask,names(theta))]=0
+  npc[match(pmask, names(theta))] = 0
   cov_matrix_theta0 = diag(npc)
-  
+  dimnames(cov_matrix_theta0) <- list(names(theta), names(theta))
   # Quick simulation to check IC OK
   output1 <- fit_R_deterministic(theta = theta,run_n,add_days=0)
   sim_marg_lik_star <- output1$lik

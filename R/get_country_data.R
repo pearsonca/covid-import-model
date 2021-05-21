@@ -1,55 +1,46 @@
 
-# - - -
-# Load covidregionaldata
+require(covidregionaldata)
+require(data.table)
 
-if(!exists("all_countries")){
-  all_india <- get_national_data("india") # Load data from covidregionaldata (slow)
-  all_uk <- get_national_data("uk",source="who") # Load data from covidregionaldata (slow)
-  
-  # Fix missing data in WHO file
-  missing_data <- c(2027,1926,1979)
-  all_uk[all_uk$date==as.Date("2021-05-16"),"cases_new"] <- missing_data[1]
-  all_uk[all_uk$date==as.Date("2021-05-17"),"cases_new"] <- missing_data[2]
-  all_uk[all_uk$date==as.Date("2021-05-18"),"cases_new"] <- missing_data[3]
-}
+.debug <- "."
+.args <- if (interactive()) c(
+  file.path(.debug, "data", "traveller_cases.rds"),
+  file.path(.debug, "data", "country_data.rds")
+)
 
-# - - -
-# Load downloaded data
+traveller_cases <- readRDS(.args[1])
+traveller_cases[, country := "India" ]
 
-if(!exists("data_proportion")){
-    
-  cog0 = fread(paste0(data_path,"cog_metadata.csv"))[country == "UK" & pillar_2 == TRUE]
-  cog = cog0[, .(.N,
-                 B.1.617.1 = sum(lineage %like% "B\\.1\\.617\\.1"),
-                 B.1.617.2 = sum(lineage %like% "B\\.1\\.617\\.2"),
-                 B.1.617.3 = sum(lineage %like% "B\\.1\\.617\\.3")), keyby = sample_date]
-  fwrite(cog, paste0(data_path,"COG_UK_out.csv"))
-  
-  data_proportion <- read_csv(paste0(data_path,"COG_UK_out.csv"))
+date_pick <- as.Date("2021-02-01")
+res <- as.data.table(
+  get_national_data(c("India", "United Kingdom"))
+)[date > date_pick,
+  .(country, date, cases_new)
+]
+setkey(res, country, date)
 
-}
+res[, ma_cases := frollmean(cases_new, 7, align = "center"), by=country ]
+res[, seq := NA_integer_ ]
 
-data_india <- read_tsv(paste0(data_path,"outbreakinfo_mutation_report_data.tsv"))
+res[
+  traveller_cases[,.(date, country, Number_B_1_617_2)],
+  seq := Number_B_1_617_2,
+  on=.(date, country)
+]
 
-
-traveller_cases0 <- read_csv("data/voc_imports_2021_05_13.csv") # Read in from repo
-
-# - - -
-# Load variant data
+red_list <- as.Date("2021-04-23")
+india_tot_pre_red <- res[country == "India" & date < red_list, sum(cases_new)]
 
 india_red_list <- as.Date("2021-04-23")
 date_pick <- as.Date("2021-02-01")
 date_uk_fit <- as.Date("2021-04-23")
 
-all_india <- all_india[1:nrow(all_uk),] # Avoid mismatched lengths
-all_india <- all_india %>% filter(date>date_pick)
-all_uk <- all_uk %>% filter(date>date_pick)
+all_india <- all_countries %>% filter(country == "India", date>date_pick)
+all_uk <- all_countries %>% filter(country == "United Kingdom",date>date_pick)
 
 data_proportion <- head(data_proportion,-2) # Remove last 1 days
 #data_proportion$long_dates <- as.Date(data_proportion$long_dates,origin="1970-01-01")
 
-data_india$date_time <- as.Date(data_india$date_time)
-data_india <- data_india %>% filter(date_time>date_pick)
 
 # Importation data
 
@@ -115,8 +106,6 @@ gen_serial_matrix <- function(
   }
   sermat[, 1:sz]
 }
-
-#incubation_period <- EpiNow2::get_incubation_period(disease = "SARS-CoV-2", source = "lauer")
 
 # Construct table of serial intervals
 t_max <- total_days
