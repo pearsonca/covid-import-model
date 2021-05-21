@@ -101,10 +101,14 @@ fit_R_deterministic <- function(
   ## overwrite dt_decline
   # rep_vol <- theta[["rep_vol"]]
   
+<<<<<<< HEAD
   daily <- c(
     daily_seq + imp*downweight_imports*daily_imports*ma_variant,
     rep(0,add_days)
   )
+=======
+  #daily_india <- daily_india_seq + import_f*downweight_imports*all_india$daily_imports*ma_India_variant
+>>>>>>> adamkucharski-main
   
   t_max <- total_days + add_days
   if( add_days>0 ){
